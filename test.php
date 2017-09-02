@@ -9,7 +9,7 @@ include_once (__DIR__ . '/wsaa.php');
 * Recordar tener todos los servicios de homologación habilitados en AFIP
 * Ejecutar desde consola con "php script_prueba.php"
 */
-$CUIT = 20333692628;
+$CUIT = 0;
 $MODO = Wsaa::MODO_HOMOLOGACION;
 
 echo "----------Script de prueba de AFIP WSFEV1----------\n";
