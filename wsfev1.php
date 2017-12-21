@@ -11,6 +11,8 @@ include_once (__DIR__ . '/wsaa.php');
 class Wsfev1 {
 
     //************* CONSTANTES ***************************** 
+    const MSG_AFIP_CONNECTION = "No pudimos comunicarnos con AFIP: ";
+    const MSG_BAD_RESPONSE = "Respuesta mal formada";
     const RESULT_ERROR = 1;
     const RESULT_OK = 0;
     const TA = "/token/TA.xml"; # Ticket de Acceso, from WSAA  
@@ -155,15 +157,15 @@ class Wsfev1 {
             try {
                 $results = $this->client->FEDummy($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
             $this->checkErrors('FEDummy');
 
             if (!isset($results->FEDummyResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEDummyResult->Errors)) {
                 $error_str = "Error al realizar consulta de puntos de venta: \n";
-                foreach ($results->FEParamGetPtosVentaResult->Errors->Err as $e) {
+                foreach ($results->FEDummyResult->Errors->Err as $e) {
                     $error_str .= "$e->Code - $e->Msg";
                 }
                 return array("code" => Wsfev1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
@@ -196,12 +198,12 @@ class Wsfev1 {
             try {
                 $results = $this->client->FEParamGetTiposTributos($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FEParamGetTiposTributos');
             if (!isset($results->FEParamGetTiposTributosResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEParamGetTiposTributosResult->Errors)) {
                 $error_str = "Error al realizar consulta de tipos de tributos: \n";
                 foreach ($results->FEParamGetTiposTributosResult->Errors->Err as $e) {
@@ -242,12 +244,12 @@ class Wsfev1 {
             try {
                 $results = $this->client->FEParamGetTiposOpcional($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FEParamGetTiposOpcional');
             if (!isset($results->FEParamGetTiposOpcionalResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEParamGetTiposOpcionalResult->Errors)) {
                 $error_str = "Error al realizar consulta de campos auxiliares: \n";
                 foreach ($results->FEParamGetTiposOpcionalResult->Errors->Err as $e) {
@@ -286,12 +288,12 @@ class Wsfev1 {
             try {
                 $results = $this->client->FEParamGetPtosVenta($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FEParamGetPtosVenta');
             if (!isset($results->FEParamGetPtosVentaResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEParamGetPtosVentaResult->Errors)) {
                 $error_str = "Error al realizar consulta de puntos de venta: \n";
                 foreach ($results->FEParamGetPtosVentaResult->Errors->Err as $e) {
@@ -340,12 +342,12 @@ class Wsfev1 {
             try {
                 $results = $this->client->FEParamGetTiposDoc($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FEParamGetTiposDoc');
             if (!isset($results->FEParamGetTiposDocResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEParamGetTiposDocResult->Errors)) {
                 $error_str = "Error al realizar consulta de tipos de documento: \n";
                 foreach ($results->FEParamGetTiposDocResult->Errors->Err as $e) {
@@ -384,12 +386,12 @@ class Wsfev1 {
             try {
                 $results = $this->client->FEParamGetTiposCbte($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FEParamGetTiposCbte');
             if (!isset($results->FEParamGetTiposCbteResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEParamGetTiposCbteResult->Errors)) {
                 $error_str = "Error al realizar consulta de tipos de comprobantes: \n";
                 foreach ($results->FEParamGetTiposCbteResult->Errors->Err as $e) {
@@ -428,12 +430,12 @@ class Wsfev1 {
             try {
                 $results = $this->client->FEParamGetTiposIva($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FEParamGetTiposIva');
             if (!isset($results->FEParamGetTiposIvaResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEParamGetTiposIvaResult->Errors)) {
                 $error_str = "Error al realizar consulta de alicuotas de iva: \n";
                 foreach ($results->FEParamGetTiposIvaResult->Errors->Err as $e) {
@@ -482,12 +484,12 @@ class Wsfev1 {
             try {
                 $results = $this->client->FEParamGetTiposMonedas($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FEParamGetTiposMonedas');
             if (!isset($results->FEParamGetTiposMonedasResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEParamGetTiposMonedasResult->Errors)) {
                 $error_str = "Error al realizar consulta de monedas: \n";
                 foreach ($results->FEParamGetTiposMonedasResult->Errors->Err as $e) {
@@ -530,12 +532,12 @@ class Wsfev1 {
             try {
                 $results = $this->client->FEParamGetCotizacion($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FEParamGetCotizacion');
             if (!isset($results->FEParamGetCotizacionResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEParamGetCotizacionResult->Errors)) {
                 $error_str = "Error al realizar consulta la cotización: \n";
                 foreach ($results->FEParamGetCotizacionResult->Errors->Err as $e) {
@@ -575,12 +577,12 @@ class Wsfev1 {
             try {
                 $results = $this->client->FECompUltimoAutorizado($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FECompUltimoAutorizado');
             if (!isset($results->FECompUltimoAutorizadoResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FECompUltimoAutorizadoResult->Errors)) {
                 $error_str = "Error al realizar consulta del último número de comprobante: \n";
                 foreach ($results->FECompUltimoAutorizadoResult->Errors->Err as $e) {
@@ -621,7 +623,7 @@ class Wsfev1 {
             $results = $this->client->FECompConsultar($params);
             $this->checkErrors('FECompConsultar');
             if (!isset($results->FECompConsultarResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FECompConsultarResult->Errors)) {
                 $error_str = "Error al realizar consulta del comprobante: \n";
                 foreach ($results->FECompConsultarResult->Errors->Err as $e) {
@@ -838,13 +840,13 @@ class Wsfev1 {
             try {
                 $results = $this->client->FECAESolicitar($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FECAESolicitar');
 
             if (!isset($results->FECAESolicitarResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FECAESolicitarResult->Errors)) {
                 $error_str = "Error al generar comprobante electronico: ";
                 foreach ($results->FECAESolicitarResult->Errors->Err as $e) {
@@ -897,13 +899,13 @@ class Wsfev1 {
             try {
                 $results = $this->client->FECAEARegInformativo($params);
             } catch (Exception $e) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
 
             $this->checkErrors('FECAEARegInformativo');
 
             if (!isset($results->FECAEARegInformativoResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FECAEARegInformativoResult->Errors)) {
                 $error_str = "Error al informar comprobante electronico: ";
                 foreach ($results->FECAEARegInformativoResult->Errors->Err as $e) {
@@ -960,7 +962,7 @@ class Wsfev1 {
             $results = $this->client->FECAEASolicitar($params);
             $this->checkErrors('FECAEASolicitar');
             if (!isset($results->FECAEASolicitarResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FECAEASolicitarResult->Errors)) {
                 $error_str = "Error al realizar solicitud de CAEA: ";
                 
@@ -1006,7 +1008,7 @@ class Wsfev1 {
             $results = $this->client->FECAEAConsultar($params);
             $this->checkErrors('FECAEAConsultar');
             if (!isset($results->FECAEAConsultarResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FECAEAConsultarResult->Errors)) {
                 $error_str = "Error al realizar consulta de CAEA: \n";
                 foreach ($results->FECAEAConsultarResult->Errors->Err as $e) {
@@ -1050,7 +1052,7 @@ class Wsfev1 {
             $results = $this->client->FECAEASinMovimiento($params);
             $this->checkErrors('FECAEASinMovimiento');
             if (!isset($results->FECAEASinMovimientoResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FECAEASinMovimientoResult->Errors)) {
                 $error_str = "Error al realizar el informe de CAEA sin movimientos: \n";
                 foreach ($results->FECAEASinMovimientoResult->Errors->Err as $e) {
@@ -1090,7 +1092,7 @@ class Wsfev1 {
             $results = $this->client->FECAEASinMovimientoConsultar($params);
             $this->checkErrors('FECAEASinMovimientoConsultar');
             if (!isset($results->FECAEASinMovimientoConsultarResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FECAEASinMovimientoConsultarResult->Errors)) {
                 $error_str = "Error al realizar consulta de CAEA sin movimientos: \n";
                 foreach ($results->FECAEASinMovimientoConsultarResult->Errors->Err as $e) {
@@ -1126,7 +1128,7 @@ class Wsfev1 {
             $results = $this->client->FECompTotXRequest($params);
             $this->checkErrors('FECompTotXRequest');
             if (!isset($results->FECompTotXRequestResult)) {
-                return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Respuesta mal formada", "datos" => NULL);
+                return array("code" => Wsfev1::RESULT_ERROR, "msg" => Wsfev1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FECompTotXRequestResult->Errors)) {
                 $error_str = "Error al realizar consulta de cantidad maxima de comprobantes: \n";
                 foreach ($results->FECompTotXRequestResult->Errors->Err as $e) {
