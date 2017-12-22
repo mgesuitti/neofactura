@@ -316,7 +316,7 @@ class Wsfexv1 {
             if (!isset($results->FEXGetCMPResult)) {
                 return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEXGetCMPResult->FEXErr) && $results->FEXGetCMPResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de CUITs paises: \n";
+                $error_str = "Error al realizar consulta de comprobante: \n";
                 $e = $results->FEXGetCMPResult->FEXErr;
                 $error_str .= "$e->ErrCode - $e->ErrMsg";
                 return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
@@ -361,7 +361,7 @@ class Wsfexv1 {
             if (!isset($results->FEXGetLast_CMPResult)) {
                 return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEXGetLast_CMPResult->FEXErr) && $results->FEXGetLast_CMPResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de CUITs paises: \n";
+                $error_str = "Error al realizar consulta de ultimo comprobante autorizado: \n";
                 $e = $results->FEXGetLast_CMPResult->FEXErr;
                 $error_str .= "$e->ErrCode - $e->ErrMsg";
                 return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
