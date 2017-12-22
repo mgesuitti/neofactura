@@ -14,7 +14,6 @@ $CUIT = 20333692628;
 $MODO = Wsaa::MODO_HOMOLOGACION;
 
 echo "----------Script de prueba de AFIP WSFEV1----------\n";
-/*
 $afip = new Wsfev1($CUIT,$MODO);
 $result = $afip->init();
 if ($result["code"] === Wsfev1::RESULT_OK) {
@@ -28,7 +27,6 @@ if ($result["code"] === Wsfev1::RESULT_OK) {
 } else {
     echo $result["msg"] . "\n";
 }
-*/
 echo "--------------Ejecución WSFEV1 finalizada-----------------\n";
 echo "----------Script de prueba de AFIP WSFEXV1----------\n";
 $afip = new Wsfexv1($CUIT,$MODO);

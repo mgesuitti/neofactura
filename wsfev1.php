@@ -22,6 +22,7 @@ class Wsfev1 {
     const URL_HOMOLOGACION = "https://wswhomo.afip.gov.ar/wsfev1/service.asmx";
     const PROXY_HOST = ""; # Proxy IP, to reach the Internet
     const PROXY_PORT = ""; # Proxy TCP port   
+    const SERVICE_NAME = "wsfe";
 
     //************* VARIABLES *****************************
     var $log_xmls = TRUE; # Logs de las llamadas
@@ -84,8 +85,8 @@ class Wsfev1 {
             $this->checkToken();
 
             if ($this->log_xmls) {
-                file_put_contents($this->base_dir . "/" . $this->cuit . "/tmp/functions.txt", print_r($this->client->__getFunctions(), TRUE));
-                file_put_contents($this->base_dir . "/" . $this->cuit . "/tmp/types.txt", print_r($this->client->__getTypes(), TRUE));
+                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME ."/tmp/functions.txt", print_r($this->client->__getFunctions(), TRUE));
+                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME ."/tmp/types.txt", print_r($this->client->__getTypes(), TRUE));
             }
         } catch (Exception $exc) {
             return array("code" => Wsfev1::RESULT_ERROR, "msg" => "Error: " . $exc->getTraceAsString());
@@ -103,11 +104,11 @@ class Wsfev1 {
      */
     function checkErrors($method) {
         if ($this->log_xmls) {
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/tmp/request-" . $method . ".xml", $this->client->__getLastRequest());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/tmp/hdr-request-" . $method . ".txt", $this->client->
+            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME ."/tmp/request-" . $method . ".xml", $this->client->__getLastRequest());
+            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME ."/tmp/hdr-request-" . $method . ".txt", $this->client->
                             __getLastRequestHeaders());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/tmp/response-" . $method . ".xml", $this->client->__getLastResponse());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/tmp/hdr-response-" . $method . ".txt", $this->client->
+            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME ."/tmp/response-" . $method . ".xml", $this->client->__getLastResponse());
+            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME ."/tmp/hdr-response-" . $method . ".txt", $this->client->
                             __getLastResponseHeaders());
         }
     }
@@ -118,11 +119,11 @@ class Wsfev1 {
      * @author: NeoComplexx Group S.A.
      */
     function checkToken() {
-        if (!file_exists($this->base_dir . "/" . $this->cuit . Wsfev1::TA)) {
+        if (!file_exists($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME .Wsfev1::TA)) {
             $not_exist = TRUE;
         } else {
             $not_exist = FALSE;
-            $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . Wsfev1::TA);
+            $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME .Wsfev1::TA);
             $expirationTime = date('c', strtotime($TA->header->expirationTime));
             $actualTime = date('c', date('U'));
         }
@@ -133,7 +134,7 @@ class Wsfev1 {
             $result = $wsaa_client->generateToken();
             if ($result["code"] == wsaa::RESULT_OK) {
                 //Recargamos con el nuevo token
-                $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . Wsfev1::TA);
+                $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME .Wsfev1::TA);
             } else {
                 return array("code" => Wsfev1::RESULT_ERROR, "msg" => $result["msg"]);
             }
