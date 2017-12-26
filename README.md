@@ -1,6 +1,7 @@
 # Neofactura
 Implementación simple para interactuar con WebService de AFIP y realizar Factura Electrónica Argentina en PHP.
 
+Permite realizar Facturas, Notas de Crédito y Débito: A, B y C con webservice wsfev1.
 Ultima incorporación: Factura de exportación E con webservice wsfexv1
 
 Pasos:
