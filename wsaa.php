@@ -14,8 +14,6 @@ class Wsaa {
     //************* CONSTANTES *****************************
     const MODO_HOMOLOGACION = 0;
     const MODO_PRODUCCION = 1;
-    const RESULT_ERROR = 1;
-    const RESULT_OK = 0;
     const WSDL_HOMOLOGACION = "/wsdl/homologacion/wsaa.wsdl"; # WSDL del web service WSAA
     const URL_HOMOLOGACION = "https://wsaahomo.afip.gov.ar/ws/services/LoginCms";
     const CERT_HOMOLOGACION = "/key/homologacion/certificado.pem"; # Certificado X.509 otorgado por AFIP
@@ -24,22 +22,19 @@ class Wsaa {
     const URL_PRODUCCION = "https://wsaa.afip.gov.ar/ws/services/LoginCms"; 
     const CERT_PRODUCCION = "/key/produccion/certificado.pem";
     const PRIVATEKEY_PRODUCCION = "/key/produccion/privada";
-    const PROXY_HOST = ""; # Proxy IP, to reach the Internet
-    const PROXY_PORT = ""; # Proxy TCP port
-    const PASSPHRASE = ""; # # The passphrase (if any) to sign
 
     //************* VARIABLES *****************************
-    var $base_dir = __DIR__;
-    var $service = "";
-    var $modo = 0;
-    var $log_xmls = TRUE; 
-    var $cuit = 0;
-    var $wsdl = "";
-    var $url = "";
-    var $cert = "";
-    var $privatekey = "";
-    
-    function __construct($service,$modo_afip,$cuit,$logs) {
+    private $base_dir = __DIR__;
+    private $service = "";
+    private $modo = 0;
+    private $log_xmls = TRUE; 
+    private $cuit = 0;
+    private $wsdl = "";
+    private $url = "";
+    private $cert = "";
+    private $privatekey = "";
+
+    public function __construct($service, $modo_afip, $cuit, $logs) {
         $this->log_xmls = $logs;
         $this->modo = $modo_afip;
         $this->cuit = $cuit;
@@ -61,12 +56,28 @@ class Wsaa {
     }
 
     /**
+     * Genera un nuevo token de conexión y lo guarda en el archivo ./:CUIT/:WebSerivce/token/TA.xml
+     *
+     * @author: NeoComplexx Group S.A.
+     */
+    public function generateToken() {
+        $this->validateFileExists($this->cert);
+        $this->validateFileExists($this->privatekey);
+        $this->validateFileExists($this->base_dir . $this->wsdl);
+
+        $this->createTRA();
+        $cms = $this->signTRA();
+        $loginResult = $this->callWSAA($cms);
+        file_put_contents($this->base_dir . "/" . $this->cuit . '/' . $this->service . "/token/TA.xml", $loginResult);
+    }
+
+    /**
      * Crea el archivo ./:CUIT/:WebSerivce/token/TRA.xml
      * El archivo es necesario para realizar la firma
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function CreateTRA() {
+    private function createTRA() {
         try {
             $TRA = new SimpleXMLElement(
                     '<?xml version="1.0" encoding="UTF-8"?>' .
@@ -79,9 +90,8 @@ class Wsaa {
             $TRA->addChild('service', $this->service);
             $TRA->asXML($this->base_dir . "/" . $this->cuit . '/' . $this->service . '/token/TRA.xml');
         } catch (Exception $exc) {
-            return array("code" => Wsaa::RESULT_ERROR, "msg" => "Error al crear TRA.xml: " . $exc->getTraceAsString());
+            throw new Exception("Error al crear TRA.xml: " . $exc->getTraceAsString());
         }
-        return array("code" => Wsaa::RESULT_OK, "msg" => "TRA.xml creado");
     }
 
     /**
@@ -90,29 +100,29 @@ class Wsaa {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function SignTRA() {
+    private function signTRA() {
         $infilename = $this->base_dir . "/" . $this->cuit . '/' . $this->service . "/token/TRA.xml";
         $outfilename = $this->base_dir . "/" . $this->cuit . '/' . $this->service . "/TRA.tmp";
         $headers = array();
         $flags = !PKCS7_DETACHED;
-        $STATUS = openssl_pkcs7_sign($infilename,$outfilename ,$this->cert ,$this->privatekey , $headers, $flags);
-        if (!$STATUS) {
-            return array("code" => Wsaa::RESULT_ERROR, "msg" => "ERROR al generar la firma PKCS#7");
+        $status = openssl_pkcs7_sign($infilename, $outfilename, $this->cert, $this->privatekey, $headers, $flags);
+        if (!$status) {
+            throw new Exception("ERROR al generar la firma PKCS#7");
         }
         $inf = fopen($this->base_dir . "/" . $this->cuit . '/' . $this->service . "/TRA.tmp", "r");
         $i = 0;
-        $CMS = "";
+        $cms = "";
         while (!feof($inf)) {
             $buffer = fgets($inf);
             if ($i++ >= 4) {
-                $CMS.=$buffer;
+                $cms.=$buffer;
             }
         }
         fclose($inf);
         #unlink("token/TRA.xml");
         unlink($this->base_dir . "/" . $this->cuit . '/' . $this->service . "/TRA.tmp");
 
-        return array("code" => Wsaa::RESULT_OK, "msg" => "Ok", "value" => $CMS);
+        return $cms;
     }
     
     /**
@@ -121,14 +131,15 @@ class Wsaa {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function CallWSAA($CMS) {
+    private function callWSAA($cms) {
         $context = stream_context_create(array(
-                'ssl' => array(
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true
-                )
-            ));
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        ));
+
         $client = new SoapClient($this->base_dir . $this->wsdl, array(
             'soap_version' => SOAP_1_2,
             'location' => $this->url,
@@ -136,7 +147,8 @@ class Wsaa {
             'exceptions' => 0,
             'stream_context' => $context
         ));
-        $results = $client->loginCms(array('in0' => $CMS));
+
+        $results = $client->loginCms(array('in0' => $cms));
 
         if ($this->log_xmls) {
             file_put_contents($this->base_dir . "/" . $this->cuit . '/' . $this->service . "/tmp/request-loginCms.xml", $client->__getLastRequest());
@@ -144,40 +156,21 @@ class Wsaa {
         }
 
         if (is_soap_fault($results)) {
-            return array("code" => Wsaa::RESULT_ERROR, "msg" => "Error SOAP: " . $results->faultcode . " - " . $results->faultstring);
+            throw new Exception("Error SOAP: " . $results->faultcode . " - " . $results->faultstring);
         }
 
-        return array("code" => Wsaa::RESULT_OK, "msg" => "Ok", "value" => $results->loginCmsReturn);
+        return $results->loginCmsReturn;
     }
-    
-    /**
-     * Genera un nuevo token de conexión y lo guarda en el archivo ./:CUIT/:WebSerivce/token/TA.xml
-     * 
-     * @author: NeoComplexx Group S.A.
-     */
-    function generateToken() {
-        if (!file_exists($this->cert)) {
-            return array("code" => Wsaa::RESULT_ERROR, "msg" => "No pudo abrirse " . $this->cert);
-        }
-        if (!file_exists($this->privatekey)) {
-            return array("code" => Wsaa::RESULT_ERROR, "msg" => "No pudo abrirse " . $this->privatekey);
-        }
-        if (!file_exists($this->base_dir . $this->wsdl)) {
-            return array("code" => Wsaa::RESULT_ERROR, "msg" => "No pudo abrirse " . $this->base_dir . $this->wsdl);
-        }
 
-        $result = $this->CreateTRA();
-        if ($result["code"] == wsaa::RESULT_OK) {
-            $result = $this->SignTRA();
-            if ($result["code"] == wsaa::RESULT_OK) {
-                $result = $this->CallWSAA($result["value"]);
-                if ($result["code"] == wsaa::RESULT_OK) {
-                    file_put_contents($this->base_dir . "/" . $this->cuit . '/' . $this->service . "/token/TA.xml", $result["value"]);
-                    return array("code" => Wsaa::RESULT_OK, "msg" => "Token creado");
-                }
-            }
+    /**
+     * Verifica la existencia de un archivo y lanza una excepción si este no existe.
+     * @param String $filePath
+     * @throws Exception
+     */
+    private function validateFileExists($filePath) {
+        if (!file_exists($filePath)) {
+            throw new Exception("No pudo abrirse el archivo $filePath");
         }
-        return $result;
     }
 
 }

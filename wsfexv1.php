@@ -13,8 +13,7 @@ class Wsfexv1 {
     //************* CONSTANTES ***************************** 
     const MSG_AFIP_CONNECTION = "No pudimos comunicarnos con AFIP: ";
     const MSG_BAD_RESPONSE = "Respuesta mal formada";
-    const RESULT_ERROR = 1;
-    const RESULT_OK = 0;
+    const MSG_ERROR_RESPONSE = "Respuesta con errores";
     const TA = "/token/TA.xml"; # Ticket de Acceso, from WSAA  
     const WSDL_PRODUCCION = "/wsdl/produccion/wsfexv1.wsdl";
     const URL_PRODUCCION = "https://servicios1.afip.gov.ar/wsfexv1/service.asmx";
@@ -25,21 +24,20 @@ class Wsfexv1 {
     const SERVICE_NAME = "wsfex";
 
     //************* VARIABLES *****************************
-    var $log_xmls = TRUE; # Logs de las llamadas
-    var $modo = 0; # Homologacion "0" o produccion "1"
-    var $cuit = 0; # CUIT del emisor de las FC/NC/ND
-    var $client = NULL;
-    var $token = NULL;
-    var $sign = NULL;
-    var $base_dir = __DIR__;
-    var $wsdl = "";
-    var $url = "";
+    private $log_xmls = TRUE; # Logs de las llamadas
+    private $modo = 0; # Homologacion "0" o produccion "1"
+    private $cuit = 0; # CUIT del emisor de las FC/NC/ND
+    private $client = NULL;
+    private $token = NULL;
+    private $sign = NULL;
+    private $base_dir = __DIR__;
+    private $wsdl = "";
+    private $url = "";
 
-    function __construct($cuit, $modo_afip) {
-        // Llamar a init luego de construir la instancia de clase
-        $this->cuit = (float) $cuit;
+    public function __construct($cuit, $modo_afip) {
         // Si no casteamos a float, lo toma como long y el soap client
         // de windows no lo soporta - > lo transformaba en 2147483647
+        $this->cuit = (float) $cuit;
         $this->modo = intval($modo_afip);
         if ($this->modo === Wsaa::MODO_PRODUCCION) {
             $this->wsdl = Wsfexv1::WSDL_PRODUCCION;
@@ -48,101 +46,7 @@ class Wsfexv1 {
             $this->wsdl = Wsfexv1::WSDL_HOMOLOGACION;
             $this->url = Wsfexv1::URL_HOMOLOGACION;
         }
-    }
-
-    /**
-     * Crea el cliente de conexión para el protocolo SOAP y carga el token actual
-     * 
-     * @author: NeoComplexx Group S.A.
-     */
-    function init() {
-        try {
-            ini_set("soap.wsdl_cache_enabled", 0);
-            ini_set('soap.wsdl_cache_ttl', 0);
-
-            if (!file_exists($this->base_dir . $this->wsdl)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "No existe el archivo de configuración de AFIP: " . $this->base_dir . $this->wsdl);
-            }
-            $context = stream_context_create(array(
-                'ssl' => array(
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true
-                )
-            ));
-            $this->client = new soapClient($this->base_dir . $this->wsdl, array('soap_version' => SOAP_1_2,
-                'location' => $this->url,
-                #        'proxy_host'   => PROXY_HOST,
-                #        'proxy_port'   => PROXY_PORT,
-                #'verifypeer' => false, 'verifyhost' => false,
-                'exceptions' => 1,
-                'encoding' => 'ISO-8859-1',
-                'features' => SOAP_USE_XSI_ARRAY_TYPE + SOAP_SINGLE_ELEMENT_ARRAYS,
-                'trace' => 1,
-                'stream_context' => $context
-            )); # needed by getLastRequestHeaders and others
-
-            $this->checkToken();
-
-            if ($this->log_xmls) {
-                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME . "/tmp/functions.txt", print_r($this->client->__getFunctions(), TRUE));
-                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME . "/tmp/types.txt", print_r($this->client->__getTypes(), TRUE));
-            }
-        } catch (Exception $exc) {
-            return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "Error: " . $exc->getTraceAsString());
-        }
-
-        return array("code" => Wsfexv1::RESULT_OK, "msg" => "Inicio correcto");
-    }
-
-    /**
-     * Si el loggueo de errores esta habilitado graba en archivos xml y txt las solicitudes y respuestas
-     * 
-     * @param: $method - String: Metodo consultado
-     * 
-     * @author: NeoComplexx Group S.A.
-     */
-    function checkErrors($method) {
-        if ($this->log_xmls) {
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME . "/tmp/request-" . $method . ".xml", $this->client->__getLastRequest());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME . "/tmp/hdr-request-" . $method . ".txt", $this->client->
-                            __getLastRequestHeaders());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME . "/tmp/response-" . $method . ".xml", $this->client->__getLastResponse());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME . "/tmp/hdr-response-" . $method . ".txt", $this->client->
-                            __getLastResponseHeaders());
-        }
-    }
-
-    /**
-     * Si el token actual está vencido solicita uno nuevo
-     * 
-     * @author: NeoComplexx Group S.A.
-     */
-    function checkToken() {
-        if (!file_exists($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME . Wsfexv1::TA)) {
-            $not_exist = TRUE;
-        } else {
-            $not_exist = FALSE;
-            $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME . Wsfexv1::TA);
-            $expirationTime = date('c', strtotime($TA->header->expirationTime));
-            $actualTime = date('c', date('U'));
-        }
-
-        if ($not_exist || $actualTime >= $expirationTime) {
-            //renovamos el token
-            $wsaa_client = new Wsaa("wsfex", $this->modo, $this->cuit, $this->log_xmls);
-            $result = $wsaa_client->generateToken();
-            if ($result["code"] == wsaa::RESULT_OK) {
-                //Recargamos con el nuevo token
-                $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . $this::SERVICE_NAME . Wsfexv1::TA);
-            } else {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $result["msg"]);
-            }
-        }
-
-        $this->token = $TA->credentials->token;
-        $this->sign = $TA->credentials->sign;
-        return array("code" => Wsfexv1::RESULT_OK, "msg" => "Ok, token valido");
+        $this->initializeSoapClient();
     }
 
     /**
@@ -150,34 +54,17 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function dummy() {
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-
-            try {
-                $results = $this->client->FEXDummy($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
-            }
-            $this->checkErrors('FEXDummy');
-
-            if (!isset($results->FEXDummyResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXDummyResult->Errors)) {
-                $error_str = "Error al realizar consulta de puntos de venta: \n";
-                foreach ($results->FEXDummyResult->Errors->Err as $e) {
-                    $error_str .= "$e->Code - $e->Msg";
-                }
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring");
-            } else {
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK");
-            }
-        } else {
-            return $result;
+    public function dummy() {
+        try {
+            $results = $this->client->FEXDummy(new stdClass());
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXDummy');
+        $this->checkErrors($results, 'FEXDummy');
+
+        return $results;
     }
 
 
@@ -189,14 +76,9 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function _comprobante($voucher) {
-        $params = new stdClass();
-
+    private function buildCAEXParams($voucher) {
         //Token************************************************
-        $params->Auth = new stdClass();
-        $params->Auth->Token = $this->token;
-        $params->Auth->Sign = $this->sign;
-        $params->Auth->Cuit = $this->cuit;
+        $params = $this->buildBaseParams();
         //Enbezado *********************************************
         $params->Cmp = new stdClass();
         $params->Cmp->Id = floatVal($voucher["numeroPuntoVenta"] . $voucher["numeroComprobante"]);
@@ -251,38 +133,20 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function emitirComprobante($voucher) {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
+    public function emitirComprobante($voucher) {
+        $params = $this->buildCAEXParams($voucher);
 
-            $params = $this->_comprobante($voucher);
-
-            try {
-                $results = $this->client->FEXAuthorize($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXAuthorize');
-            if (!isset($results->FEXAuthorizeResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXAuthorizeResult->FEXErr) && $results->FEXAuthorizeResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al emitir comprobante de exportación: \n";
-                $e = $results->FEXAuthorizeResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $response =$results->FEXAuthorizeResult->FEXResultAuth;
-                $cae = $response->Cae;
-                $fecha_vencimiento = $response->Fch_venc_Cae;
-                return array("code" => Wsfev1::RESULT_OK, "msg" => "OK", "cae" => $cae, "fechaVencimientoCAE" => $fecha_vencimiento);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXAuthorize($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXAuthorize');
+        $this->checkErrors($results, 'FEXAuthorize');
+
+        $response = $results->FEXAuthorizeResult->FEXResultAuth;
+        return array("cae" => $response->Cae, "fechaVencimientoCAE" => $response->Fch_venc_Cae);
     }
 
     /**
@@ -293,43 +157,23 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarComprobante($PV, $TC, $NRO) {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
-            $params->Cmp = new stdClass();
-            $params->Cmp->Cbte_tipo = $TC;
-            $params->Cmp->Punto_vta = $PV;
-            $params->Cmp->Cbte_nro = $NRO;
+    public function consultarComprobante($PV, $TC, $NRO) {
+        $params = $this->buildBaseParams();
+        $params->Cmp = new stdClass();
+        $params->Cmp->Cbte_tipo = $TC;
+        $params->Cmp->Punto_vta = $PV;
+        $params->Cmp->Cbte_nro = $NRO;
 
-            try {
-                $results = $this->client->FEXGetCMP($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetCMP');
-            if (!isset($results->FEXGetCMPResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetCMPResult->FEXErr) && $results->FEXGetCMPResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de comprobante: \n";
-                $e = $results->FEXGetCMPResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $datos = $results->FEXGetCMPResult->FEXResultGet;
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $datos);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXGetCMP($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetCMP');
+        $this->checkErrors($results, 'FEXGetCMP');
+
+        return $results->FEXGetCMPResult->FEXResultGet;
     }
 
     /**
@@ -340,41 +184,21 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarUltimoComprobanteAutorizado($PV, $TC) {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
-            $params->Auth->Cbte_Tipo = $TC;
-            $params->Auth->Pto_venta = $PV;
+    public function consultarUltimoComprobanteAutorizado($PV, $TC) {
+        $params = $this->buildBaseParams();
+        $params->Auth->Cbte_Tipo = $TC;
+        $params->Auth->Pto_venta = $PV;
 
-            try {
-                $results = $this->client->FEXGetLast_CMP($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetLast_CMP');
-            if (!isset($results->FEXGetLast_CMPResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetLast_CMPResult->FEXErr) && $results->FEXGetLast_CMPResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de ultimo comprobante autorizado: \n";
-                $e = $results->FEXGetLast_CMPResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $number = $results->FEXGetLast_CMPResult->FEXResult_LastCMP->Cbte_nro;
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "number" => $number);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXGetLast_CMP($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetLast_CMP');
+        $this->checkErrors($results, 'FEXGetLast_CMP');
+
+        return $results->FEXGetLast_CMPResult->FEXResult_LastCMP->Cbte_nro;
     }
 
 
@@ -383,42 +207,24 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarCuitsPaises() {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
+    public function consultarCuitsPaises() {
+        $params = $this->buildBaseParams();
 
-            try {
-                $results = $this->client->FEXGetPARAM_DST_CUIT($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetPARAM_DST_CUIT');
-            if (!isset($results->FEXGetPARAM_DST_CUITResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetPARAM_DST_CUITResult->FEXErr) && $results->FEXGetPARAM_DST_CUITResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de CUITs paises: \n";
-                $e = $results->FEXGetPARAM_DST_CUITResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $X = $results->FEXGetPARAM_DST_CUITResult->FEXResultGet;
-                foreach ($X->ClsFEXResponse_DST_cuit as $Y) {
-                    $datos[$Y->DST_CUIT] = $Y->DST_Ds;
-                }
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $datos);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXGetPARAM_DST_CUIT($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetPARAM_DST_CUIT');
+        $this->checkErrors($results, 'FEXGetPARAM_DST_CUIT');
+
+        $results = $results->FEXGetPARAM_DST_CUITResult->FEXResultGet;
+        $datos = array();
+        foreach ($results->ClsFEXResponse_DST_cuit as $result) {
+            $datos[$result->DST_CUIT] = $result->DST_Ds;
+        }
+        return $datos;
     }
 
     /**
@@ -426,42 +232,24 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarMonedas() {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
+    public function consultarMonedas() {
+        $params = $this->buildBaseParams();
 
-            try {
-                $results = $this->client->FEXGetPARAM_MON($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetPARAM_MON');
-            if (!isset($results->FEXGetPARAM_MONResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetPARAM_MONResult->FEXErr) && $results->FEXGetPARAM_MONResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de CUITs paises: \n";
-                $e = $results->FEXGetPARAM_MONResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $X = $results->FEXGetPARAM_MONResult->FEXResultGet;
-                foreach ($X->ClsFEXResponse_Mon as $Y) {
-                    $datos[$Y->Mon_Id] = $Y->Mon_Ds;
-                }
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $datos);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXGetPARAM_MON($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetPARAM_MON');
+        $this->checkErrors($results, 'FEXGetPARAM_MON');
+
+        $results = $results->FEXGetPARAM_MONResult->FEXResultGet;
+        $datos = array();
+        foreach ($results->ClsFEXResponse_Mon as $result) {
+            $datos[$result->Mon_Id] = $result->Mon_Ds;
+        }
+        return $datos;
     }
 
     /**
@@ -469,42 +257,24 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarTiposComprobante() {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
+    public function consultarTiposComprobante() {
+        $params = $this->buildBaseParams();
 
-            try {
-                $results = $this->client->FEXGetPARAM_Cbte_Tipo($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetPARAM_Cbte_Tipo');
-            if (!isset($results->FEXGetPARAM_Cbte_TipoResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetPARAM_Cbte_TipoResult->FEXErr) && $results->FEXGetPARAM_Cbte_TipoResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de tipos de comprobantes: \n";
-                $e = $results->FEXGetPARAM_Cbte_TipoResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $X = $results->FEXGetPARAM_Cbte_TipoResult->FEXResultGet;
-                foreach ($X->ClsFEXResponse_Cbte_Tipo as $Y) {
-                    $datos[$Y->Cbte_Id] = $Y->Cbte_Ds;
-                }
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $datos);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXGetPARAM_Cbte_Tipo($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetPARAM_Cbte_Tipo');
+        $this->checkErrors($results, 'FEXGetPARAM_Cbte_Tipo');
+
+        $results = $results->FEXGetPARAM_Cbte_TipoResult->FEXResultGet;
+        $datos = array();
+        foreach ($results->ClsFEXResponse_Cbte_Tipo as $result) {
+            $datos[$result->Cbte_Id] = $result->Cbte_Ds;
+        }
+        return $datos;
     }
 
     /**
@@ -512,42 +282,24 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarTiposExportacion() {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
+    public function consultarTiposExportacion() {
+        $params = $this->buildBaseParams();
 
-            try {
-                $results = $this->client->FEXGetPARAM_Tipo_Expo($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetPARAM_Tipo_Expo');
-            if (!isset($results->FEXGetPARAM_Tipo_ExpoResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetPARAM_Tipo_ExpoResult->FEXErr) && $results->FEXGetPARAM_Tipo_ExpoResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de tipos de exportación: \n";
-                $e = $results->FEXGetPARAM_Tipo_ExpoResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $X = $results->FEXGetPARAM_Tipo_ExpoResult->FEXResultGet;
-                foreach ($X->ClsFEXResponse_Tex as $Y) {
-                    $datos[$Y->Tex_Id] = $Y->Tex_Ds;
-                }
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $datos);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXGetPARAM_Tipo_Expo($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetPARAM_Tipo_Expo');
+        $this->checkErrors($results, 'FEXGetPARAM_Tipo_Expo');
+
+        $results = $results->FEXGetPARAM_Tipo_ExpoResult->FEXResultGet;
+        $datos = array();
+        foreach ($results->ClsFEXResponse_Tex as $result) {
+            $datos[$result->Tex_Id] = $result->Tex_Ds;
+        }
+        return $datos;
     }
 
     /**
@@ -555,42 +307,24 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarUnidadesMedida() {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
+    public function consultarUnidadesMedida() {
+        $params = $this->buildBaseParams();
 
-            try {
-                $results = $this->client->FEXGetPARAM_Umed($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetPARAM_Umed');
-            if (!isset($results->FEXGetPARAM_UMedResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetPARAM_UMedResult->FEXErr) && $results->FEXGetPARAM_UMedResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de unidades de medida: \n";
-                $e = $results->FEXGetPARAM_UMedResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $X = $results->FEXGetPARAM_UMedResult->FEXResultGet;
-                foreach ($X->ClsFEXResponse_UMed as $Y) {
-                    $datos[$Y->Umed_Id] = $Y->Umed_Ds;
-                }
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $datos);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXGetPARAM_Umed($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetPARAM_Umed');
+        $this->checkErrors($results, 'FEXGetPARAM_Umed');
+
+        $results = $results->FEXGetPARAM_UMedResult->FEXResultGet;
+        $datos = array();
+        foreach ($results->ClsFEXResponse_UMed as $result) {
+            $datos[$result->Umed_Id] = $result->Umed_Ds;
+        }
+        return $datos;
     }
 
     /**
@@ -598,42 +332,24 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarIdiomas() {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
+    public function consultarIdiomas() {
+        $params = $this->buildBaseParams();
 
-            try {
-                $results = $this->client->FEXGetPARAM_Idiomas($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetPARAM_Idiomas');
-            if (!isset($results->FEXGetPARAM_IdiomasResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetPARAM_IdiomasResult->FEXErr) && $results->FEXGetPARAM_IdiomasResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de idiomas: \n";
-                $e = $results->FEXGetPARAM_IdiomasResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $X = $results->FEXGetPARAM_IdiomasResult->FEXResultGet;
-                foreach ($X->ClsFEXResponse_Idi as $Y) {
-                    $datos[$Y->Idi_Id] = $Y->Idi_Ds;
-                }
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $datos);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXGetPARAM_Idiomas($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetPARAM_Idiomas');
+        $this->checkErrors($results, 'FEXGetPARAM_Idiomas');
+
+        $results = $results->FEXGetPARAM_IdiomasResult->FEXResultGet;
+        $datos = array();
+        foreach ($results->ClsFEXResponse_Idi as $result) {
+            $datos[$result->Idi_Id] = $result->Idi_Ds;
+        }
+        return $datos;
     }
 
     /**
@@ -641,42 +357,24 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarPaises() {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
+    public function consultarPaises() {
+        $params = $this->buildBaseParams();
 
-            try {
-                $results = $this->client->FEXGetPARAM_DST_Pais($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetPARAM_DST_Pais');
-            if (!isset($results->FEXGetPARAM_DST_paisResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetPARAM_DST_paisResult->FEXErr) && $results->FEXGetPARAM_DST_paisResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de paises: \n";
-                $e = $results->FEXGetPARAM_DST_paisResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $X = $results->FEXGetPARAM_DST_paisResult->FEXResultGet;
-                foreach ($X->ClsFEXResponse_DST_pais as $Y) {
-                    $datos[$Y->DST_Codigo] = $Y->DST_Ds;
-                }
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $datos);
-            }
-        } else {
-            return $result;
+        try {
+            $results = $this->client->FEXGetPARAM_DST_Pais($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetPARAM_DST_Pais');
+        $this->checkErrors($results, 'FEXGetPARAM_DST_pais');
+
+        $results = $results->FEXGetPARAM_DST_paisResult->FEXResultGet;
+        $datos = array();
+        foreach ($results->ClsFEXResponse_DST_pais as $result) {
+            $datos[$result->DST_Codigo] = $result->DST_Ds;
+        }
+        return $datos;
     }
 
     /**
@@ -684,39 +382,19 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarCotizacion($Mon_id) {
-        $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
-            $params->Mon_id = $Mon_id;
-            try {
-                $results = $this->client->FEXGetPARAM_Ctz($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
-
-            $this->checkErrors('FEXGetPARAM_Ctz');
-            if (!isset($results->FEXGetPARAM_CtzResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetPARAM_CtzResult->FEXErr) && $results->FEXGetPARAM_CtzResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de cotización de moneda: \n";
-                $e = $results->FEXGetPARAM_CtzResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $X = $results->FEXGetPARAM_CtzResult->FEXResultGet;
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $X->Mon_ctz);
-            }
-        } else {
-            return $result;
+    public function consultarCotizacion($mon_id) {
+        $params = $this->buildBaseParams();
+        $params->Mon_id = $mon_id;
+        try {
+            $results = $this->client->FEXGetPARAM_Ctz($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
+
+        $this->logClientActivity('FEXGetPARAM_Ctz');
+        $this->checkErrors($results, 'FEXGetPARAM_Ctz');
+
+        return $results->FEXGetPARAM_CtzResult->FEXResultGet->Mon_ctz;
     }
 
     /**
@@ -724,41 +402,151 @@ class Wsfexv1 {
      * 
      * @author: NeoComplexx Group S.A.
      */
-    function consultarPuntosVenta() {
+    public function consultarPuntosVenta() {
+        $params = $this->buildBaseParams();
+
+        try {
+            $results = $this->client->FEXGetPARAM_PtoVenta($params);
+        } catch (Exception $e) {
+            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+        }
+
+        $this->logClientActivity('FEXGetPARAM_PtoVenta');
+        $this->checkErrors($results, 'FEXGetPARAM_PtoVenta');
+
+        $results = $results->FEXGetPARAM_PtoVentaResult->FEXResultGet; //TODO Ver cuando viene un resultado
         $datos = array();
-        $result = $this->checkToken();
-        if ($result["code"] == Wsfexv1::RESULT_OK) {
-            $params = new stdClass();
-            $params->Auth = new stdClass();
-            $params->Auth->Token = $this->token;
-            $params->Auth->Sign = $this->sign;
-            $params->Auth->Cuit = $this->cuit;
+        foreach ($results->ClsFEXResponse_PtoVenta as $result) {
+            $datos[$result->PVE_Nro] = $result->PVE_Bloqueado;
+        }
+        return $datos;
+    }
 
-            try {
-                $results = $this->client->FEXGetPARAM_PtoVenta($params);
-            } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
-            }
+    /**
+     * Crea el cliente de conexión para el protocolo SOAP.
+     *
+     * @author: NeoComplexx Group S.A.
+     */
+    private function initializeSoapClient() {
+        try {
+            $this->validateFileExists($this->base_dir . $this->wsdl);
+            ini_set("soap.wsdl_cache_enabled", 0);
+            ini_set('soap.wsdl_cache_ttl', 0);
 
-            $this->checkErrors('FEXGetPARAM_PtoVenta');
-            if (!isset($results->FEXGetPARAM_PtoVentaResult)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
-            } else if (isset($results->FEXGetPARAM_PtoVentaResult->FEXErr) && $results->FEXGetPARAM_PtoVentaResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de puntos de venta: \n";
-                $e = $results->FEXGetPARAM_PtoVentaResult->FEXErr;
-                $error_str .= "$e->ErrCode - $e->ErrMsg";
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
-            } else if (is_soap_fault($results)) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "$results->faultcode - $results->faultstring", "datos" => NULL);
-            } else {
-                $X = $results->FEXGetPARAM_PtoVentaResult->FEXResultGet; //TODO Ver cuando viene un resultado
-                foreach ($X->ClsFEXResponse_PtoVenta as $Y) {
-                    $datos[$Y->PVE_Nro] = $Y->$Y->PVE_Bloqueado;
-                }
-                return array("code" => Wsfexv1::RESULT_OK, "msg" => "OK", "datos" => $datos);
+            $context = stream_context_create(array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            ));
+
+            $this->client = new soapClient($this->base_dir . $this->wsdl, array('soap_version' => SOAP_1_2,
+                'location' => $this->url,
+                #'proxy_host' => PROXY_HOST,
+                #'proxy_port' => PROXY_PORT,
+                #'verifypeer' => false,
+                #'verifyhost' => false,
+                'exceptions' => 1,
+                'encoding' => 'ISO-8859-1',
+                'features' => SOAP_USE_XSI_ARRAY_TYPE + SOAP_SINGLE_ELEMENT_ARRAYS,
+                'trace' => 1,
+                'stream_context' => $context
+            )); # needed by getLastRequestHeaders and others
+
+            if ($this->log_xmls) {
+                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME ."/tmp/functions.txt", print_r($this->client->__getFunctions(), TRUE));
+                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME ."/tmp/types.txt", print_r($this->client->__getTypes(), TRUE));
             }
+        } catch (Exception $exc) {
+            throw new Exception("Error: " . $exc->getTraceAsString());
+        }
+    }
+
+    /**
+     * Construye un objeto con los parametros basicos requeridos por todos los metodos del servcio.
+     */
+    private function buildBaseParams() {
+        $this->checkToken();
+        $params = new stdClass();
+        $params->Auth = new stdClass();
+        $params->Auth->Token = $this->token;
+        $params->Auth->Sign = $this->sign;
+        $params->Auth->Cuit = $this->cuit;
+        return $params;
+    }
+
+    /**
+     * Verifica la existencia y validez del token actual y solicita uno nuevo si corresponde.
+     *
+     * @author: NeoComplexx Group S.A.
+     */
+    private function checkToken() {
+        if (!file_exists($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . Wsfexv1::TA)) {
+            $generateToken = TRUE;
         } else {
-            return $result;
+            $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . Wsfexv1::TA);
+            $expirationTime = date('c', strtotime($TA->header->expirationTime));
+            $actualTime = date('c', date('U'));
+            $generateToken = $actualTime >= $expirationTime;
+        }
+
+        if ($generateToken) {
+            //renovamos el token
+            $wsaa_client = new Wsaa(Wsfexv1::SERVICE_NAME, $this->modo, $this->cuit, $this->log_xmls);
+            $wsaa_client->generateToken();
+            //Recargamos con el nuevo token
+            $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME .Wsfev1::TA);
+        }
+
+        $this->token = $TA->credentials->token;
+        $this->sign = $TA->credentials->sign;
+    }
+
+    /**
+     * Si el loggueo de errores esta habilitado graba en archivos xml y txt las solicitudes y respuestas
+     * 
+     * @param: $method - String: Metodo consultado
+     * @author: NeoComplexx Group S.A.
+     */
+    private function logClientActivity($method) {
+        if ($this->log_xmls) {
+            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . "/tmp/request-" . $method . ".xml", $this->client->__getLastRequest());
+            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . "/tmp/hdr-request-" . $method . ".txt", $this->client->
+                __getLastRequestHeaders());
+            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . "/tmp/response-" . $method . ".xml", $this->client->__getLastResponse());
+            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . "/tmp/hdr-response-" . $method . ".txt", $this->client->
+                __getLastResponseHeaders());
+        }
+    }
+
+    /**
+     * Revisa la respuesta de un web service en busca de errores y lanza una excepción si corresponde.
+     * @param unknown $results
+     * @param String $calledMethod
+     * @throws Exception
+     */
+    private function checkErrors($results, $calledMethod) {
+        if (!isset($results->{$calledMethod.'Result'})) {
+            throw new Exception(Wsfexv1::MSG_BAD_RESPONSE . ' - ' . $calledMethod);
+        } else if (isset($results->{$calledMethod.'Result'}->FEXErr) && $results->{$calledMethod.'Result'}->FEXErr->ErrCode !== 0) {
+            $errorMsg = Wsfexv1::MSG_ERROR_RESPONSE . ' - ' . $calledMethod;
+            $e = $results->{$calledMethod.'Result'}->FEXErr;
+            $errorMsg .= "$e->ErrCode - $e->ErrMsg";
+            throw new Exception($errorMsg);
+        } else if (is_soap_fault($results)) {
+            throw new Exception("$results->faultcode - $results->faultstring - $calledMethod");
+        }
+    }
+
+    /**
+     * Verifica la existencia de un archivo y lanza una excepción si este no existe.
+     * @param String $filePath
+     * @throws Exception
+     */
+    private function validateFileExists($filePath) {
+        if (!file_exists($filePath)) {
+            throw new Exception("No pudo abrirse el archivo $filePath");
         }
     }
 
