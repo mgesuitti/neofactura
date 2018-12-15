@@ -13,8 +13,9 @@ Pasos:
 1. Clonar repositorio de github
 2. Crear una carpeta dentro del mismo con el [cuit] de la persona autorizada en AFIP 
 3. Crear dos carpetas dentro de la anterior: ./[cuit]/wsfe y ./[cuit]/wsfex
-3. Dentro de dichas carpetas crear dos carpetas más: ./[cuit]./[serviceName]/temp y ./[cuit]./[serviceName]/token
-4. En ./key/homologacion y ./key/produccion colocar los certificados generados en afip junto con las claves privadas.
+4. Dentro de dichas carpetas crear dos carpetas más: ./[cuit]./[serviceName]/tmp y ./[cuit]./[serviceName]/token
+5. Crear las carpetas "./key/homologacion" y "./key/produccion"
+6. En ./key/homologacion y ./key/produccion colocar los certificados generados en afip junto con las claves privadas.
 
 Test:
 
