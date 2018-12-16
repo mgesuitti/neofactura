@@ -14,32 +14,22 @@ $CUIT = 20333692628;
 $MODO = Wsaa::MODO_HOMOLOGACION;
 
 echo "----------Script de prueba de AFIP WSFEV1----------\n";
-$afip = new Wsfev1($CUIT,$MODO);
-$result = $afip->init();
-if ($result["code"] === Wsfev1::RESULT_OK) {
+try {
+    $afip = new Wsfev1($CUIT,$MODO);
     $result = $afip->dummy();
-    if ($result["code"] === Wsfev1::RESULT_OK) {
-        $datos = print_r($result["msg"], TRUE);
-        echo "Resultado: " . $datos . "\n";
-    } else {
-        echo $result["msg"] . "\n";
-    }
-} else {
-    echo $result["msg"] . "\n";
+    echo $result;
+} catch (Exception $e) {
+    echo 'Falló la ejecución: ' . $e->getMessage();
 }
+
 echo "--------------Ejecución WSFEV1 finalizada-----------------\n";
 echo "----------Script de prueba de AFIP WSFEXV1----------\n";
-$afip = new Wsfexv1($CUIT,$MODO);
-$result = $afip->init();
-if ($result["code"] === Wsfexv1::RESULT_OK) {
+
+try {
+    $afip = new Wsfexv1($CUIT,$MODO);
     $result = $afip->dummy();
-    if ($result["code"] === Wsfexv1::RESULT_OK) {
-        $datos = print_r($result["msg"], TRUE);
-        echo "Resultado: " . $datos . "\n";
-    } else {
-        echo $result["msg"] . "\n";
-    }
-} else {
-    echo $result["msg"] . "\n";
+    echo $result;
+} catch (Exception $e) {
+    echo 'Falló la ejecución: ' . $e->getMessage();
 }
 echo "--------------Ejecución WSFEXV1 finalizada-----------------\n";
