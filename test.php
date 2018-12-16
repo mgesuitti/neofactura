@@ -37,7 +37,7 @@ echo "--------------Ejecución WSFEXV1 finalizada-----------------\n";
 echo "----------Script de prueba de AFIP WsSrPadronA5----------\n";
 try {
     $afip = new WsSrPadronA5($CUIT,$MODO);
-    $result = $afip->getPersona("27255820422");
+    $result = $afip->dummy();
     print_r($result);
 } catch (Exception $e) {
     echo 'Falló la ejecución: ' . $e->getMessage();

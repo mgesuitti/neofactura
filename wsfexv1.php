@@ -1,35 +1,24 @@
 <?php
 include_once (__DIR__ . '/wsaa.php');
+include_once (__DIR__ . '/wsafip.php');
+
 /**
  * Clase para emitir facturas de exportación electronicas online con AFIP
  * con el webservice wsfexv1
  * 
  * @author NeoComplexx Group S.A.
  */
-class Wsfexv1 {
+class Wsfexv1 extends WsAFIP {
+
     //************* CONSTANTES ***************************** 
-    const MSG_AFIP_CONNECTION = "No pudimos comunicarnos con AFIP: ";
-    const MSG_BAD_RESPONSE = "Respuesta mal formada";
-    const MSG_ERROR_RESPONSE = "Respuesta con errores";
-    const TA = "/token/TA.xml"; # Ticket de Acceso, from WSAA  
+
     const WSDL_PRODUCCION = "/wsdl/produccion/wsfexv1.wsdl";
     const URL_PRODUCCION = "https://servicios1.afip.gov.ar/wsfexv1/service.asmx";
     const WSDL_HOMOLOGACION = "/wsdl/homologacion/wsfexv1.wsdl";
     const URL_HOMOLOGACION = "https://wswhomo.afip.gov.ar/wsfexv1/service.asmx";
-    const PROXY_HOST = ""; # Proxy IP, to reach the Internet
-    const PROXY_PORT = ""; # Proxy TCP port   
-    const SERVICE_NAME = "wsfex";
-    //************* VARIABLES *****************************
-    private $log_xmls = TRUE; # Logs de las llamadas
-    private $modo = 0; # Homologacion "0" o produccion "1"
-    private $cuit = 0; # CUIT del emisor de las FC/NC/ND
-    private $client = NULL;
-    private $token = NULL;
-    private $sign = NULL;
-    private $base_dir = __DIR__;
-    private $wsdl = "";
-    private $url = "";
+
     public function __construct($cuit, $modo_afip) {
+        $this->serviceName = "wsfex";
         // Si no casteamos a float, lo toma como long y el soap client
         // de windows no lo soporta - > lo transformaba en 2147483647
         $this->cuit = (float) $cuit;
@@ -41,7 +30,7 @@ class Wsfexv1 {
             $this->wsdl = Wsfexv1::WSDL_HOMOLOGACION;
             $this->url = Wsfexv1::URL_HOMOLOGACION;
         }
-        $this->initializeSoapClient();
+        $this->initializeSoapClient(SOAP_1_2);
     }
     /**
      * Consulta dummy para verificar funcionamiento del servicio
@@ -52,7 +41,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXDummy(new stdClass());
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXDummy');
         $this->checkErrors($results, 'FEXDummy');
@@ -125,7 +114,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXAuthorize($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXAuthorize');
         $this->checkErrors($results, 'FEXAuthorize');
@@ -149,7 +138,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetCMP($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetCMP');
         $this->checkErrors($results, 'FEXGetCMP');
@@ -170,7 +159,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetLast_CMP($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetLast_CMP');
         $this->checkErrors($results, 'FEXGetLast_CMP');
@@ -186,7 +175,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetPARAM_DST_CUIT($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetPARAM_DST_CUIT');
         $this->checkErrors($results, 'FEXGetPARAM_DST_CUIT');
@@ -207,7 +196,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetPARAM_MON($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetPARAM_MON');
         $this->checkErrors($results, 'FEXGetPARAM_MON');
@@ -228,7 +217,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetPARAM_Cbte_Tipo($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetPARAM_Cbte_Tipo');
         $this->checkErrors($results, 'FEXGetPARAM_Cbte_Tipo');
@@ -249,7 +238,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetPARAM_Tipo_Expo($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetPARAM_Tipo_Expo');
         $this->checkErrors($results, 'FEXGetPARAM_Tipo_Expo');
@@ -270,7 +259,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetPARAM_Umed($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetPARAM_Umed');
         $this->checkErrors($results, 'FEXGetPARAM_Umed');
@@ -291,7 +280,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetPARAM_Idiomas($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetPARAM_Idiomas');
         $this->checkErrors($results, 'FEXGetPARAM_Idiomas');
@@ -312,7 +301,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetPARAM_DST_Pais($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetPARAM_DST_Pais');
         $this->checkErrors($results, 'FEXGetPARAM_DST_pais');
@@ -334,7 +323,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetPARAM_Ctz($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetPARAM_Ctz');
         $this->checkErrors($results, 'FEXGetPARAM_Ctz');
@@ -350,7 +339,7 @@ class Wsfexv1 {
         try {
             $results = $this->client->FEXGetPARAM_PtoVenta($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
         $this->logClientActivity('FEXGetPARAM_PtoVenta');
         $this->checkErrors($results, 'FEXGetPARAM_PtoVenta');
@@ -361,43 +350,7 @@ class Wsfexv1 {
         }
         return $datos;
     }
-    /**
-     * Crea el cliente de conexión para el protocolo SOAP.
-     *
-     * @author: NeoComplexx Group S.A.
-     */
-    private function initializeSoapClient() {
-        try {
-            $this->validateFileExists($this->base_dir . $this->wsdl);
-            ini_set("soap.wsdl_cache_enabled", 0);
-            ini_set('soap.wsdl_cache_ttl', 0);
-            $context = stream_context_create(array(
-                'ssl' => array(
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true
-                )
-            ));
-            $this->client = new soapClient($this->base_dir . $this->wsdl, array('soap_version' => SOAP_1_2,
-                'location' => $this->url,
-                #'proxy_host' => PROXY_HOST,
-                #'proxy_port' => PROXY_PORT,
-                #'verifypeer' => false,
-                #'verifyhost' => false,
-                'exceptions' => 1,
-                'encoding' => 'ISO-8859-1',
-                'features' => SOAP_USE_XSI_ARRAY_TYPE + SOAP_SINGLE_ELEMENT_ARRAYS,
-                'trace' => 1,
-                'stream_context' => $context
-            )); # needed by getLastRequestHeaders and others
-            if ($this->log_xmls) {
-                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME ."/tmp/functions.txt", print_r($this->client->__getFunctions(), TRUE));
-                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME ."/tmp/types.txt", print_r($this->client->__getTypes(), TRUE));
-            }
-        } catch (Exception $exc) {
-            throw new Exception("Error: " . $exc->getTraceAsString());
-        }
-    }
+
     /**
      * Construye un objeto con los parametros basicos requeridos por todos los metodos del servcio.
      */
@@ -410,46 +363,7 @@ class Wsfexv1 {
         $params->Auth->Cuit = $this->cuit;
         return $params;
     }
-    /**
-     * Verifica la existencia y validez del token actual y solicita uno nuevo si corresponde.
-     *
-     * @author: NeoComplexx Group S.A.
-     */
-    private function checkToken() {
-        if (!file_exists($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . Wsfexv1::TA)) {
-            $generateToken = TRUE;
-        } else {
-            $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . Wsfexv1::TA);
-            $expirationTime = date('c', strtotime($TA->header->expirationTime));
-            $actualTime = date('c', date('U'));
-            $generateToken = $actualTime >= $expirationTime;
-        }
-        if ($generateToken) {
-            //renovamos el token
-            $wsaa_client = new Wsaa(Wsfexv1::SERVICE_NAME, $this->modo, $this->cuit, $this->log_xmls);
-            $wsaa_client->generateToken();
-            //Recargamos con el nuevo token
-            $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME .Wsfev1::TA);
-        }
-        $this->token = $TA->credentials->token;
-        $this->sign = $TA->credentials->sign;
-    }
-    /**
-     * Si el loggueo de errores esta habilitado graba en archivos xml y txt las solicitudes y respuestas
-     * 
-     * @param: $method - String: Metodo consultado
-     * @author: NeoComplexx Group S.A.
-     */
-    private function logClientActivity($method) {
-        if ($this->log_xmls) {
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . "/tmp/request-" . $method . ".xml", $this->client->__getLastRequest());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . "/tmp/hdr-request-" . $method . ".txt", $this->client->
-                __getLastRequestHeaders());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . "/tmp/response-" . $method . ".xml", $this->client->__getLastResponse());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfexv1::SERVICE_NAME . "/tmp/hdr-response-" . $method . ".txt", $this->client->
-                __getLastResponseHeaders());
-        }
-    }
+
     /**
      * Revisa la respuesta de un web service en busca de errores y lanza una excepción si corresponde.
      * @param unknown $results
@@ -458,9 +372,9 @@ class Wsfexv1 {
      */
     private function checkErrors($results, $calledMethod) {
         if (!isset($results->{$calledMethod.'Result'})) {
-            throw new Exception(Wsfexv1::MSG_BAD_RESPONSE . ' - ' . $calledMethod);
+            throw new Exception(WsAFIP::MSG_BAD_RESPONSE . ' - ' . $calledMethod);
         } else if (isset($results->{$calledMethod.'Result'}->FEXErr) && $results->{$calledMethod.'Result'}->FEXErr->ErrCode !== 0) {
-            $errorMsg = Wsfexv1::MSG_ERROR_RESPONSE . ' - ' . $calledMethod;
+            $errorMsg = WsAFIP::MSG_ERROR_RESPONSE . ' - ' . $calledMethod;
             $e = $results->{$calledMethod.'Result'}->FEXErr;
             $errorMsg .= "$e->ErrCode - $e->ErrMsg";
             throw new Exception($errorMsg);
@@ -468,14 +382,5 @@ class Wsfexv1 {
             throw new Exception("$results->faultcode - $results->faultstring - $calledMethod");
         }
     }
-    /**
-     * Verifica la existencia de un archivo y lanza una excepción si este no existe.
-     * @param String $filePath
-     * @throws Exception
-     */
-    private function validateFileExists($filePath) {
-        if (!file_exists($filePath)) {
-            throw new Exception("No pudo abrirse el archivo $filePath");
-        }
-    }
+
 }

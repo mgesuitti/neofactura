@@ -1,6 +1,7 @@
 <?php
 
 include_once (__DIR__ . '/wsaa.php');
+include_once (__DIR__ . '/wsafip.php');
 
 /**
  * Clase para emitir facturas electronicas online con AFIP
@@ -8,33 +9,17 @@ include_once (__DIR__ . '/wsaa.php');
  * 
  * @author NeoComplexx Group S.A.
  */
-class Wsfev1 {
+class Wsfev1 extends WsAFIP {
 
     //************* CONSTANTES ***************************** 
-    const MSG_AFIP_CONNECTION = "No pudimos comunicarnos con AFIP: ";
-    const MSG_BAD_RESPONSE = "Respuesta mal formada";
-    const MSG_ERROR_RESPONSE = "Respuesta con errores";
-    const TA = "/token/TA.xml"; # Ticket de Acceso, from WSAA  
+
     const WSDL_PRODUCCION = "/wsdl/produccion/wsfev1.wsdl";
     const URL_PRODUCCION = "https://servicios1.afip.gov.ar/wsfev1/service.asmx";
     const WSDL_HOMOLOGACION = "/wsdl/homologacion/wsfev1.wsdl";
     const URL_HOMOLOGACION = "https://wswhomo.afip.gov.ar/wsfev1/service.asmx";
-    const PROXY_HOST = ""; # Proxy IP, to reach the Internet
-    const PROXY_PORT = ""; # Proxy TCP port   
-    const SERVICE_NAME = "wsfe";
-
-    //************* VARIABLES *****************************
-    private $log_xmls = TRUE; # Logs de las llamadas
-    private $modo = 0; # Homologacion "0" o produccion "1"
-    private $cuit = 0; # CUIT del emisor de las FC/NC/ND
-    private $client = NULL;
-    private $token = NULL;
-    private $sign = NULL;
-    private $base_dir = __DIR__;
-    private $wsdl = "";
-    private $url = "";
 
     public function __construct($cuit, $modo_afip) {
+        $this->serviceName = "wsfe";
         // Si no casteamos a float, lo toma como long y el soap client
         // de windows no lo soporta - > lo transformaba en 2147483647
         $this->cuit = (float) $cuit;
@@ -46,7 +31,7 @@ class Wsfev1 {
             $this->wsdl = Wsfev1::WSDL_HOMOLOGACION;
             $this->url = Wsfev1::URL_HOMOLOGACION;
         }
-        $this->initializeSoapClient();
+        $this->initializeSoapClient(SOAP_1_2);
     }
 
     /**
@@ -58,7 +43,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FEDummy(new stdClass());
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FEDummy');
@@ -79,7 +64,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FEParamGetTiposTributos($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FEParamGetTiposTributos');
@@ -106,7 +91,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FEParamGetTiposOpcional($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FEParamGetTiposOpcional');
@@ -131,7 +116,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FEParamGetPtosVenta($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FEParamGetPtosVenta');
@@ -166,7 +151,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FEParamGetTiposDoc($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FEParamGetTiposDoc');
@@ -191,7 +176,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FEParamGetTiposCbte($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FEParamGetTiposCbte');
@@ -216,7 +201,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FEParamGetTiposIva($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FEParamGetTiposIva');
@@ -251,7 +236,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FEParamGetTiposMonedas($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FEParamGetTiposMonedas');
@@ -281,7 +266,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FEParamGetCotizacion($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FEParamGetCotizacion');
@@ -306,7 +291,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FECompUltimoAutorizado($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FECompUltimoAutorizado');
@@ -333,7 +318,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FECompConsultar($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FECompConsultar');
@@ -526,7 +511,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FECAESolicitar($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FECAESolicitar');
@@ -569,7 +554,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FECAEARegInformativo($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FECAEARegInformativo');
@@ -612,7 +597,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FECAEASolicitar($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FECAEASolicitar');
@@ -644,7 +629,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FECAEAConsultar($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FECAEAConsultar');
@@ -674,7 +659,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FECAEASinMovimiento($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FECAEASinMovimiento');
@@ -698,7 +683,7 @@ class Wsfev1 {
         try {
             $results = $this->client->FECAEASinMovimientoConsultar($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FECAEASinMovimientoConsultar');
@@ -719,54 +704,12 @@ class Wsfev1 {
         try {
             $results = $this->client->FECompTotXRequest($params);
         } catch (Exception $e) {
-            throw new Exception(Wsfev1::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
+            throw new Exception(WsAFIP::MSG_AFIP_CONNECTION . $e->getMessage(), null, $e);
         }
 
         $this->logClientActivity('FECompTotXRequest');
         $this->checkErrors($results, 'FECompTotXRequest');
         return $results->FECompTotXRequestResult->RegXReq;
-    }
-
-
-    /**
-     * Crea el cliente de conexión para el protocolo SOAP.
-     *
-     * @author: NeoComplexx Group S.A.
-     */
-    private function initializeSoapClient() {
-        try {
-            $this->validateFileExists($this->base_dir . $this->wsdl);
-            ini_set("soap.wsdl_cache_enabled", 0);
-            ini_set('soap.wsdl_cache_ttl', 0);
-
-            $context = stream_context_create(array(
-                'ssl' => array(
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true
-                )
-            ));
-
-            $this->client = new soapClient($this->base_dir . $this->wsdl, array('soap_version' => SOAP_1_2,
-                'location' => $this->url,
-                #'proxy_host' => PROXY_HOST,
-                #'proxy_port' => PROXY_PORT,
-                #'verifypeer' => false,
-                #'verifyhost' => false,
-                'exceptions' => 1,
-                'encoding' => 'ISO-8859-1',
-                'features' => SOAP_USE_XSI_ARRAY_TYPE + SOAP_SINGLE_ELEMENT_ARRAYS,
-                'trace' => 1,
-                'stream_context' => $context
-            )); # needed by getLastRequestHeaders and others
-
-            if ($this->log_xmls) {
-                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfev1::SERVICE_NAME ."/tmp/functions.txt", print_r($this->client->__getFunctions(), TRUE));
-                file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfev1::SERVICE_NAME ."/tmp/types.txt", print_r($this->client->__getTypes(), TRUE));
-            }
-        } catch (Exception $exc) {
-            throw new Exception("Error: " . $exc->getTraceAsString());
-        }
     }
 
     /**
@@ -783,50 +726,6 @@ class Wsfev1 {
     }
 
     /**
-     * Verifica la existencia y validez del token actual y solicita uno nuevo si corresponde.
-     *
-     * @author: NeoComplexx Group S.A.
-     */
-    private function checkToken() {
-        if (!file_exists($this->base_dir . "/" . $this->cuit . "/" . Wsfev1::SERVICE_NAME . Wsfev1::TA)) {
-            $generateToken = TRUE;
-        } else {
-            $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . Wsfev1::SERVICE_NAME . Wsfev1::TA);
-            $expirationTime = date('c', strtotime($TA->header->expirationTime));
-            $actualTime = date('c', date('U'));
-            $generateToken = $actualTime >= $expirationTime;
-        }
-
-        if ($generateToken) {
-            //renovamos el token
-            $wsaa_client = new Wsaa("wsfe", $this->modo, $this->cuit, $this->log_xmls);
-            $wsaa_client->generateToken();
-            //Recargamos con el nuevo token
-            $TA = simplexml_load_file($this->base_dir . "/" . $this->cuit . "/" . Wsfev1::SERVICE_NAME . Wsfev1::TA);
-        }
-
-        $this->token = $TA->credentials->token;
-        $this->sign = $TA->credentials->sign;
-    }
-
-    /**
-     * Si el loggueo de errores esta habilitado graba en archivos xml y txt las solicitudes y respuestas
-     *
-     * @param: $method - String: Metodo consultado
-     * @author: NeoComplexx Group S.A.
-     */
-    private function logClientActivity($method) {
-        if ($this->log_xmls) {
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfev1::SERVICE_NAME . "/tmp/request-" . $method . ".xml", $this->client->__getLastRequest());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfev1::SERVICE_NAME . "/tmp/hdr-request-" . $method . ".txt", $this->client->
-                __getLastRequestHeaders());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfev1::SERVICE_NAME . "/tmp/response-" . $method . ".xml", $this->client->__getLastResponse());
-            file_put_contents($this->base_dir . "/" . $this->cuit . "/" . Wsfev1::SERVICE_NAME . "/tmp/hdr-response-" . $method . ".txt", $this->client->
-                __getLastResponseHeaders());
-        }
-    }
-
-    /**
      * Revisa la respuesta de un web service en busca de errores y lanza una excepción si corresponde.
      * @param unknown $results
      * @param String $calledMethod
@@ -834,26 +733,15 @@ class Wsfev1 {
      */
     private function checkErrors($results, $calledMethod) {
         if (!isset($results->{$calledMethod.'Result'})) {
-            throw new Exception(Wsfev1::MSG_BAD_RESPONSE . ' - ' . $calledMethod);
+            throw new Exception(WsAFIP::MSG_BAD_RESPONSE . ' - ' . $calledMethod);
         } else if (isset($results->{$calledMethod.'Result'}->Errors)) {
-            $errorMsg = Wsfev1::MSG_ERROR_RESPONSE . ' - ' . $calledMethod;
+            $errorMsg = WsAFIP::MSG_ERROR_RESPONSE . ' - ' . $calledMethod;
             foreach ($results->{$calledMethod.'Result'}->Errors->Err as $e) {
                 $errorMsg .= "\n $e->Code - $e->Msg";
             }
             throw new Exception($errorMsg);
         } else if (is_soap_fault($results)) {
             throw new Exception("$results->faultcode - $results->faultstring - $calledMethod");
-        }
-    }
-
-    /**
-     * Verifica la existencia de un archivo y lanza una excepción si este no existe.
-     * @param String $filePath
-     * @throws Exception
-     */
-    private function validateFileExists($filePath) {
-        if (!file_exists($filePath)) {
-            throw new Exception("No pudo abrirse el archivo $filePath");
         }
     }
 
