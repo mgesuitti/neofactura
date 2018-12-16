@@ -17,7 +17,7 @@ echo "----------Script de prueba de AFIP WSFEV1----------\n";
 try {
     $afip = new Wsfev1($CUIT,$MODO);
     $result = $afip->dummy();
-    echo $result;
+    print_r($result);
 } catch (Exception $e) {
     echo 'Falló la ejecución: ' . $e->getMessage();
 }
@@ -28,7 +28,7 @@ echo "----------Script de prueba de AFIP WSFEXV1----------\n";
 try {
     $afip = new Wsfexv1($CUIT,$MODO);
     $result = $afip->dummy();
-    echo $result;
+    print_r($result);
 } catch (Exception $e) {
     echo 'Falló la ejecución: ' . $e->getMessage();
 }

@@ -62,7 +62,7 @@ class Wsfev1 {
         }
 
         $this->logClientActivity('FEDummy');
-        $this->checkErrors($result, 'FEDummy');
+        $this->checkErrors($results, 'FEDummy');
 
         return $results;
     }
@@ -530,7 +530,7 @@ class Wsfev1 {
         }
 
         $this->logClientActivity('FECAESolicitar');
-        $this->checkErrors($results, FECAESolicitar);
+        $this->checkErrors($results, 'FECAESolicitar');
 
         if (property_exists($results->FECAESolicitarResult->FeCabResp, "Resultado") && $results->FECAESolicitarResult->FeCabResp->Resultado == 'R') {
             //Pedido rechazado
