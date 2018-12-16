@@ -158,14 +158,14 @@ class Wsfexv1 {
             try {
                 $results = $this->client->FEXDummy($params);
             } catch (Exception $e) {
-                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => "No pudimos comunicarnos con AFIP: " . $e->getMessage(), "datos" => NULL);
+                return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_AFIP_CONNECTION . $e->getMessage(), "datos" => NULL);
             }
             $this->checkErrors('FEXDummy');
 
             if (!isset($results->FEXDummyResult)) {
                 return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEXDummyResult->Errors)) {
-                $error_str = "Error al realizar consulta de puntos de venta: \n";
+                $error_str = "Error al realizar consulta dummy: \n";
                 foreach ($results->FEXDummyResult->Errors->Err as $e) {
                     $error_str .= "$e->Code - $e->Msg";
                 }
@@ -446,7 +446,7 @@ class Wsfexv1 {
             if (!isset($results->FEXGetPARAM_MONResult)) {
                 return array("code" => Wsfexv1::RESULT_ERROR, "msg" => Wsfexv1::MSG_BAD_RESPONSE, "datos" => NULL);
             } else if (isset($results->FEXGetPARAM_MONResult->FEXErr) && $results->FEXGetPARAM_MONResult->FEXErr->ErrCode !== 0) {
-                $error_str = "Error al realizar consulta de CUITs paises: \n";
+                $error_str = "Error al realizar consulta de Monedas: \n";
                 $e = $results->FEXGetPARAM_MONResult->FEXErr;
                 $error_str .= "$e->ErrCode - $e->ErrMsg";
                 return array("code" => Wsfexv1::RESULT_ERROR, "msg" => $error_str, "datos" => NULL);
