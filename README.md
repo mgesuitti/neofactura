@@ -6,7 +6,7 @@ Implementación simple para interactuar con WebService de AFIP y realizar Factur
 
 Permite realizar Facturas, Notas de Crédito y Débito: A, B y C con webservice wsfev1.
 
-Ultima incorporación: Factura de exportación E con webservice wsfexv1
+Versión 1.1: Agrega Factura de exportación E con webservice wsfexv1
 
 Pasos:
 
