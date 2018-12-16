@@ -35,17 +35,11 @@ try {
 }
 echo "--------------Ejecución WSFEXV1 finalizada-----------------\n";
 echo "----------Script de prueba de AFIP WsSrPadronA5----------\n";
-$afip = new WsSrPadronA5($CUIT,$MODO);
-$result = $afip->init();
-if ($result["code"] === Wsfexv1::RESULT_OK) {
-    $result = $afip->dummy();
-    if ($result["code"] === Wsfexv1::RESULT_OK) {
-        $datos = print_r($result["msg"], TRUE);
-        echo "Resultado: " . $datos . "\n";
-    } else {
-        echo $result["msg"] . "\n";
-    }
-} else {
-    echo $result["msg"] . "\n";
+try {
+    $afip = new WsSrPadronA5($CUIT,$MODO);
+    $result = $afip->getPersona("27255820422");
+    print_r($result);
+} catch (Exception $e) {
+    echo 'Falló la ejecución: ' . $e->getMessage();
 }
 echo "--------------Ejecución WsSrPadronA5 finalizada-----------------\n";
