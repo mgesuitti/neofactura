@@ -2,6 +2,7 @@
 
 include_once (__DIR__ . '/wsfev1.php');
 include_once (__DIR__ . '/wsfexv1.php');
+include_once (__DIR__ . '/wssrpadrona5.php');
 include_once (__DIR__ . '/wsaa.php');
 
 /**
@@ -43,3 +44,18 @@ if ($result["code"] === Wsfexv1::RESULT_OK) {
     echo $result["msg"] . "\n";
 }
 echo "--------------Ejecución WSFEXV1 finalizada-----------------\n";
+echo "----------Script de prueba de AFIP WsSrPadronA5----------\n";
+$afip = new WsSrPadronA5($CUIT,$MODO);
+$result = $afip->init();
+if ($result["code"] === Wsfexv1::RESULT_OK) {
+    $result = $afip->dummy();
+    if ($result["code"] === Wsfexv1::RESULT_OK) {
+        $datos = print_r($result["msg"], TRUE);
+        echo "Resultado: " . $datos . "\n";
+    } else {
+        echo $result["msg"] . "\n";
+    }
+} else {
+    echo $result["msg"] . "\n";
+}
+echo "--------------Ejecución WsSrPadronA5 finalizada-----------------\n";
