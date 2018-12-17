@@ -72,7 +72,7 @@ class WsSrPadronA5 extends WsAFIP {
         $this->logClientActivity('getPersona');
         $this->checkErrors($results, 'persona');
 
-        $personaAFIP = new PersonaAFIP($results->personaReturn->datosGenerales);
+        $personaAFIP = new PersonaAFIP($results->personaReturn);
 
         return $personaAFIP;
     }

@@ -1,5 +1,7 @@
 <?php
 include_once (__DIR__ . '/domicilioFiscalAFIP.php');
+include_once (__DIR__ . '/monotributoAFIP.php');
+include_once (__DIR__ . '/regimenGeneralAFIP.php');
 
 class PersonaAFIP {
 
@@ -14,6 +16,8 @@ class PersonaAFIP {
     public $razonSocial = "";
     // public $fechaContratoSocial = null;
     // public $dependencia = null;
+    public $datosRegimenGeneral = null;
+    public $datosMonotributo = null;
 
     public function __construct($responseObject)
     {
@@ -21,20 +25,30 @@ class PersonaAFIP {
     }
 
     private function _map($responseObject) {
-        $this->apellido = $responseObject->apellido;
-        $this->estadoClave = $responseObject->estadoClave;
-        $this->idPersona = $responseObject->idPersona;
-        $this->mesCierre = $responseObject->mesCierre;
-        $this->nombre = $responseObject->nombre;
-        $this->tipoClave = $responseObject->tipoClave;
-        $this->tipoPersona = $responseObject->tipoPersona;
+        $datosGenerales = $responseObject->datosGenerales;
+
+        $this->apellido = $datosGenerales->apellido;
+        $this->estadoClave = $datosGenerales->estadoClave;
+        $this->idPersona = $datosGenerales->idPersona;
+        $this->mesCierre = $datosGenerales->mesCierre;
+        $this->nombre = $datosGenerales->nombre;
+        $this->tipoClave = $datosGenerales->tipoClave;
+        $this->tipoPersona = $datosGenerales->tipoPersona;
         
-        if (isset($responseObject->domicilioFiscal)) {
-            $this->domicilioFiscal = new DomicilioFiscalAFIP($responseObject->domicilioFiscal);
+        if (isset($datosGenerales->domicilioFiscal)) {
+            $this->domicilioFiscal = new DomicilioFiscalAFIP($datosGenerales->domicilioFiscal);
         }
 
-        if (isset($responseObject->razonSocial)) {
+        if (isset($datosGenerales->razonSocial)) {
             $this->razonSocial = $responseObject->razonSocial;
+        }
+
+        if (isset($responseObject->datosRegimenGeneral)) {
+            $this->datosRegimenGeneral = new RegimenGeneralAFIP($responseObject->datosRegimenGeneral);
+        }
+
+        if (isset($responseObject->datosMonotributo)) {
+            $this->datosMonotributo = new MonotributoAFIP($responseObject->datosMonotributo);
         }
         
     }
