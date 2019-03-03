@@ -8,11 +8,13 @@ Permite realizar Facturas, Notas de Crédito y Débito: A, B y C con webservice 
 
 Versión 1.1: Agrega Factura de exportación E con webservice wsfexv1
 
+Versión 1.2: Agrega Consulta de personas (Padrón A5) con webservice WsSrPadronA5
+
 Pasos:
 
 1. Clonar repositorio de github
 2. Crear una carpeta dentro del mismo con el [cuit] de la persona autorizada en AFIP 
-3. Crear dos carpetas dentro de la anterior: ./[cuit]/wsfe y ./[cuit]/wsfex
+3. Crear tres carpetas dentro de la anterior: ./[cuit]/wsfe , ./[cuit]/wsfex y ./[cuit]/ws_sr_padron_a5
 4. Dentro de dichas carpetas crear dos carpetas más: ./[cuit]./[serviceName]/tmp y ./[cuit]./[serviceName]/token
 5. Crear las carpetas "./key/homologacion" y "./key/produccion"
 6. En ./key/homologacion y ./key/produccion colocar los certificados generados en afip junto con las claves privadas.
