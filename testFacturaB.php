@@ -4,12 +4,12 @@ include_once (__DIR__ . '/wsfev1.php');
 include_once (__DIR__ . '/wsaa.php');
 
 /**
-* Este script sirve para probar el webservice WSFEV1 con Factura A
+* Este script sirve para probar el webservice WSFEV1 con Factura B
 * Hay que indicar el CUIT con el cual vamos a realizar las pruebas
 * Hay que indicar el número de comprobante correcto
-* Hay que indicar un CUIT válido para el receptor del comprobante
+* Hay que indicar un DNI válido para el receptor del comprobante
 * Recordar tener todos los servicios de homologación habilitados en AFIP
-* Ejecutar desde consola con "php testFacturaA.php"
+* Ejecutar desde consola con "php testFacturaB.php"
 */
 $CUIT = "XXXXXXXXXXX"; // CUIT del emisor
 $MODO = Wsaa::MODO_HOMOLOGACION;
@@ -19,7 +19,7 @@ echo "----------Script de prueba de AFIP WSFEV1----------\n";
 $voucher = Array
 (
     "idVoucher" => 1,
-    "numeroComprobante" => 36,
+    "numeroComprobante" => 1,
     "numeroPuntoVenta" => 1,
     "cae" => 0,
     "letra" => "B",
