@@ -11,7 +11,7 @@ include_once (__DIR__ . '/wsaa.php');
 * Recordar tener todos los servicios de homologación habilitados en AFIP
 * Ejecutar desde consola con "php testFacturaE.php"
 */
-$CUIT = "20333692628"; // CUIT del emisor
+$CUIT = "XXXXXXXXXXX"; // CUIT del emisor
 $MODO = Wsaa::MODO_HOMOLOGACION;
 
 echo "----------Script de prueba de AFIP WSFEXV1----------\n";
