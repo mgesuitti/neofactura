@@ -9,9 +9,9 @@ include_once (__DIR__ . '/wsaa.php');
 * Este script sirve para probar el webservice
 * Hay que indicar el CUIT con el cual vamos a realizar las pruebas
 * Recordar tener todos los servicios de homologación habilitados en AFIP
-* Ejecutar desde consola con "php script_prueba.php"
+* Ejecutar desde consola con "php test.php"
 */
-$CUIT = 20333692628;
+$CUIT = "XXXXXXXXXXX"; // CUIT del emisor
 $MODO = Wsaa::MODO_HOMOLOGACION;
 
 echo "----------Script de prueba de AFIP WSFEV1----------\n";
