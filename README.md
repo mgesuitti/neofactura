@@ -3,6 +3,7 @@
 Foro oficial para consultas o sugerencias: https://groups.google.com/forum/#!forum/neofactura
 
 Implementación simple para interactuar con WebService de AFIP y realizar Factura Electrónica Argentina en PHP.
+Luego de emitir la factura, podés generar un pdf con nuestra segunda librería: https://github.com/neocomplexx/neopdf
 
 Permite realizar Facturas, Notas de Crédito y Débito: A, B y C con webservice wsfev1.
 
