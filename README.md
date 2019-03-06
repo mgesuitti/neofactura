@@ -1,6 +1,6 @@
 # Neofactura
 
-Foro oficial para consultas o sugerencias: https://groups.google.com/forum/#!forum/neofactura
+Web oficial para consultas o sugerencias: http://neofactura.neocomplexx.com/
 
 Implementación simple para interactuar con WebService de AFIP y realizar Factura Electrónica Argentina en PHP.
 Luego de emitir la factura, podés generar un pdf con nuestra segunda librería: https://github.com/neocomplexx/neopdf
