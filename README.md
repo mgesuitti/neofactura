@@ -24,5 +24,6 @@ Test:
 
 1. Editar el archivo test.php y modificar el valor de la variable $CUIT por el de la persona autorizada en AFIP.
 2. Probar la libreria desde consola con "php test.php" -> Debería imprimir OK por cada web service.
+3. Opcional: Podrás probar los distintos tipos de comprobante desde los ejemplos nombrados como testFacturaX.php
 
 ¿Más info? -> https://github.com/neocomplexx/neofactura/wiki
