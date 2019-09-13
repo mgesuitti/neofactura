@@ -328,6 +328,28 @@ class Wsfev1 extends WsAFIP {
     }
 
     /**
+     * Algunos campos de fecha no permiten ser enviados con fechas anteriores a la actual
+     * Este metodo reemplaza la fecha por la actual si es anterior a esta
+     * 
+     * @param String $date_value
+     * @return \DateTime
+     * 
+     * @author: NeoComplexx Group S.A.
+     */
+    private function dateAfterOrNow($date_value) {
+        $date_final = date_create_from_format('Ymd', $date_value);
+        $date_final->settime(0,0);
+        date_default_timezone_set("America/Buenos_Aires");
+        $today = new DateTime();
+        $today->settime(0,0);
+        if ($date_final < $today) {
+            $date_final = $today;
+        }
+
+        return $date_final;
+    }
+
+    /**
      * Metodo privado que arma los parametros que pide el WSDL
      * 
      * @param type $voucher
@@ -359,7 +381,7 @@ class Wsfev1 extends WsAFIP {
             //En el caso de servicios los siguientes campos son obligatorios:
             $comprobante->FchServDesde = $voucher["fechaDesde"];
             $comprobante->FchServHasta = $voucher["fechaHasta"];
-            $comprobante->FchVtoPago = $voucher["fechaVtoPago"];
+            $comprobante->FchVtoPago = $this->dateAfterOrNow($voucher["fechaVtoPago"]);
         }
         //$comprobante->Opcionales //Array
         //PIE**************************************************
@@ -439,7 +461,7 @@ class Wsfev1 extends WsAFIP {
             //En el caso de servicios los siguientes campos son obligatorios:
             $comprobante->FchServDesde = $voucher["fechaDesde"];
             $comprobante->FchServHasta = $voucher["fechaHasta"];
-            $comprobante->FchVtoPago = $voucher["fechaVtoPago"];
+            $comprobante->FchVtoPago = $this->dateAfterOrNow($voucher["fechaVtoPago"]);
         }
 
         //$comprobante->Opcionales //Array
@@ -537,7 +559,7 @@ class Wsfev1 extends WsAFIP {
         //Faltaria contemplar mas de 1 comprobante
         $cae = $respuestas[0]->CAE;
         $fecha_vencimiento = $respuestas[0]->CAEFchVto;
-        return array("cae" => $cae, "fechaVencimientoCAE" => $fecha_vencimiento);
+        return array("cae" => $cae, "fechaVencimientoCAE" => $fecha_vencimiento, "" => $voucher->FchVtoPago);
     }
 
     /**
