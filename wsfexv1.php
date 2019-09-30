@@ -60,7 +60,7 @@ class Wsfexv1 extends WsAFIP {
         $params = $this->buildBaseParams();
         //Enbezado *********************************************
         $params->Cmp = new stdClass();
-        $params->Cmp->Id = floatVal($voucher["numeroPuntoVenta"] . $voucher["numeroComprobante"]);
+        $params->Cmp->Id = floatVal($voucher["codigoTipoComprobante"] . $voucher["numeroPuntoVenta"] . $voucher["numeroComprobante"]);
         $params->Cmp->Fecha_cbte = $voucher["fechaComprobante"]; // [N]
         $params->Cmp->Cbte_Tipo = $voucher["codigoTipoComprobante"]; // FEXGetPARAM_Cbte_Tipo
         $params->Cmp->Punto_vta = $voucher["numeroPuntoVenta"];
@@ -78,7 +78,20 @@ class Wsfexv1 extends WsAFIP {
         //$params->Cmp->Obs_comerciales = ""; // [N]
         $params->Cmp->Imp_total = $voucher["importeTotal"];
         //$params->Cmp->Obs = ""; // [N]
-        //$params->Cmp->Cmps_asoc = array(); // [N]
+        
+        //COMPROBANTES ASOCIADOS*****************************************
+        if (array_key_exists("CbtesAsoc", $voucher) && count($voucher["CbtesAsoc"]) > 0) {
+            $params->Cmp->Cmps_asoc = array(); // [N]
+            foreach ($voucher["CbtesAsoc"] as $value) {
+                $cbte = new stdClass();
+                $cbte->Cbte_tipo = $value["Tipo"];
+                $cbte->Cbte_punto_vta = $value["PtoVta"];
+                $cbte->Cbte_nro = $value["Nro"];
+                $cbte->Cbte_cuit = $this->cuit;
+                $params->Cmp->Cmps_asoc[] = $cbte;
+            }
+        }
+
         //$params->Cmp->Forma_pago = $voucher["CondicionVenta"]; // [N]
         //$params->Cmp->Incoterms = ""; // Cláusula de venta - FEXGetPARAM_Incoterms [N]
         //$params->Cmp->Incoterms_Ds = ""; // [N]

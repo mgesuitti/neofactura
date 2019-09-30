@@ -1,3 +1,4 @@
+
 <?php
 
 include_once (__DIR__ . '/wsfexv1.php');
@@ -28,11 +29,11 @@ $voucher = Array
     "nombreCliente" => "The New Corporation",
     "domicilioCliente" => "8200 Ghost Street, #520D",
     "fechaComprobante" => "20190930",
-    "codigoTipoComprobante" => 19,
-    "TipoComprobante" => "Factura",
+    "codigoTipoComprobante" => 21,
+    "TipoComprobante" => "Nota de Crédito",
     "codigoConcepto" => 2,
     "codigoMoneda" => "DOL",
-    "cotizacionMoneda" => 60.27,
+    "cotizacionMoneda" => 60.2670,
     "fechaDesde" => "20190303",
     "fechaHasta" => "20190303",
     "fechaVtoPago" => "20190303",
@@ -70,7 +71,15 @@ $voucher = Array
         ),
     "subtotivas" => Array(),
     "Tributos" => Array(),
-    "CbtesAsoc" => Array(),
+    "CbtesAsoc" => Array
+    (
+        0 => Array 
+            (
+                "Tipo" => 19,
+                "PtoVta" => 1,
+                "Nro" => 1
+            )
+    ),
 );
 
 try {
