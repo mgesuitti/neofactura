@@ -346,7 +346,7 @@ class Wsfev1 extends WsAFIP {
             $date_final = $today;
         }
 
-        return $date_final;
+        return $date_final->format('Ymd');
     }
 
     /**
@@ -559,7 +559,7 @@ class Wsfev1 extends WsAFIP {
         //Faltaria contemplar mas de 1 comprobante
         $cae = $respuestas[0]->CAE;
         $fecha_vencimiento = $respuestas[0]->CAEFchVto;
-        return array("cae" => $cae, "fechaVencimientoCAE" => $fecha_vencimiento, "" => $voucher->FchVtoPago);
+        return array("cae" => $cae, "fechaVencimientoCAE" => $fecha_vencimiento);
     }
 
     /**
