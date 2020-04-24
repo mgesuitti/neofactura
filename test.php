@@ -3,6 +3,7 @@
 include_once (__DIR__ . '/wsfev1.php');
 include_once (__DIR__ . '/wsfexv1.php');
 include_once (__DIR__ . '/wssrpadrona5.php');
+include_once (__DIR__ . '/wssrpadrona13.php');
 include_once (__DIR__ . '/wsaa.php');
 
 /**
@@ -43,3 +44,12 @@ try {
     echo 'Falló la ejecución: ' . $e->getMessage();
 }
 echo "--------------Ejecución WsSrPadronA5 finalizada-----------------\n";
+echo "----------Script de prueba de AFIP WsSrPadronA13----------\n";
+try {
+    $afip = new WsSrPadronA13($CUIT,$MODO);
+    $result = $afip->dummy();
+    print_r($result);
+} catch (Exception $e) {
+    echo 'Falló la ejecución: ' . $e->getMessage();
+}
+echo "--------------Ejecución WsSrPadronA13 finalizada-----------------\n";

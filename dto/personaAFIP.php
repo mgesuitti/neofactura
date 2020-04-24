@@ -25,18 +25,33 @@ class PersonaAFIP {
     }
 
     private function _map($responseObject) {
-        $datosGenerales = $responseObject->datosGenerales;
+        $datosGenerales = null;
+
+        if (isset($responseObject->datosGenerales)) {
+            $datosGenerales = $responseObject->datosGenerales;
+        } else {
+            $datosGenerales = $responseObject->persona;
+        }
 
         $this->apellido = $datosGenerales->apellido;
         $this->estadoClave = $datosGenerales->estadoClave;
         $this->idPersona = $datosGenerales->idPersona;
-        $this->mesCierre = $datosGenerales->mesCierre;
+
+        if (isset($datosGenerales->mesCierre)) {
+            $this->mesCierre = $datosGenerales->mesCierre;
+        }
+
         $this->nombre = $datosGenerales->nombre;
         $this->tipoClave = $datosGenerales->tipoClave;
         $this->tipoPersona = $datosGenerales->tipoPersona;
         
+        // Compatibilidad con PadronA5
         if (isset($datosGenerales->domicilioFiscal)) {
             $this->domicilioFiscal = new DomicilioFiscalAFIP($datosGenerales->domicilioFiscal);
+        }
+
+        if (isset($datosGenerales->domicilio) && count($datosGenerales->domicilio) > 0) {
+            $this->domicilioFiscal = new DomicilioFiscalAFIP($datosGenerales->domicilio[0]);
         }
 
         if (isset($datosGenerales->razonSocial)) {

@@ -21,7 +21,14 @@ class DomicilioFiscalAFIP {
         $this->tipoDomicilio = $responseObject->tipoDomicilio;
         $this->direccion = $responseObject->direccion;
         $this->localidad = $responseObject->localidad;
-        $this->codPostal = $responseObject->codPostal;
+
+        if (isset($responseObject->codPostal)) {
+            // Compataibilidad con PadronA5
+            $this->codPostal = $responseObject->codPostal;
+        } else if (isset($responseObject->codigoPostal)) {
+            $this->codPostal = $responseObject->codigoPostal;
+        }
+
         $this->idProvincia = $responseObject->idProvincia;
         $this->descripcionProvincia = $responseObject->descripcionProvincia;
     }
