@@ -11,6 +11,8 @@ Versión 1.1: Agrega Factura de exportación E con webservice wsfexv1
 
 Versión 1.2: Agrega Consulta de personas (Padrón A5) con webservice WsSrPadronA5
 
+Versión 1.3: Agrega Consulta de personas (Padrón A13) con webservice WsSrPadronA13
+
 Pasos:
 
 1. Clonar repositorio de github
