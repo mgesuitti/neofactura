@@ -12,7 +12,7 @@ include_once (__DIR__ . '/wsaa.php');
 * Ejecutar desde consola con "php testFacturaA.php"
 */
 
-$CUIT = "xxxxxxxxx"; // CUIT del emisor
+$CUIT = "XXXXXXXXXXX"; // CUIT del emisor
 $MODO = Wsaa::MODO_HOMOLOGACION;
 
 echo "----------Script de prueba de AFIP WSFEV1----------\n";
@@ -44,8 +44,8 @@ $voucher = Array(
     "letra" => "A",
     "fechaVencimientoCAE" => "",
     "tipoResponsable" => "IVA Responsable Inscripto",
-    "nombreCliente" =>  "MARITIMA HEINLEIN S.A.",
-    "domicilioCliente" => "PERU 359",
+    "nombreCliente" =>  "PRUEBA S.A.",
+    "domicilioCliente" => "Calle Falsa 123",
     "fechaComprobante" => $fecha,
     "codigoTipoComprobante" => 201,
     "TipoComprobante" => "Factura",
@@ -57,9 +57,7 @@ $voucher = Array(
     "fechaVtoPago" => $fecha,
     "codigoTipoDocumento" => 80,
     "TipoDocumento" => "CUIT",
-   // "numeroDocumento" => "30693184947", // MEDITERRANEAN SHIPPING COMPANY S A - Act.Princ. 523020
-   // "numeroDocumento" => "30590162279", // MARITIMA HEINLEIN - Act.Princ. 523020
-    "numeroDocumento" => "30709710857", // MARITIMA MERIDIAN S.A. - Act.Princ. 523020
+    "numeroDocumento" => "XXXXXXXXXXX",
     "importeTotal" => 1000000.000,
     "importeOtrosTributos" => 0.000,
     "importeGravado" => 0.000,
