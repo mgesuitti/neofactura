@@ -81,6 +81,8 @@
           <s:element minOccurs="1" maxOccurs="1" name="Tipo" type="s:int" />
           <s:element minOccurs="1" maxOccurs="1" name="PtoVta" type="s:int" />
           <s:element minOccurs="1" maxOccurs="1" name="Nro" type="s:long" />
+          <s:element minOccurs="1" maxOccurs="1" name="Cuit" type="s:long" />
+          <s:element minOccurs="1" maxOccurs="1" name="CbteFch" type="s:long" />
         </s:sequence>
       </s:complexType>
       <s:complexType name="ArrayOfTributo">

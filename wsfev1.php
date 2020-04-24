@@ -11,7 +11,7 @@ include_once (__DIR__ . '/wsafip.php');
  */
 class Wsfev1 extends WsAFIP {
 
-    //************* CONSTANTES ***************************** 
+    //************* CONSTANTES ***************************** **
 
     const WSDL_PRODUCCION = "/wsdl/produccion/wsfev1.wsdl";
     const URL_PRODUCCION = "https://servicios1.afip.gov.ar/wsfev1/service.asmx";
@@ -500,6 +500,17 @@ class Wsfev1 extends WsAFIP {
             }
         }
 
+        // FACTURA DE CREDITO ELECTRONICO FCE by AleDC
+        if (array_key_exists("Opcionales", $voucher) && count($voucher["Opcionales"]) > 0) {
+            $comprobante->Opcionales = array();
+            foreach ($voucher["Opcionales"] as $value) {
+                $opcional = new stdClass();
+                $opcional->Id = $value["id"];
+                $opcional->Valor = $value["valor"];
+                $comprobante->Opcionales[] = $opcional;
+            }
+        }
+
         //COMPROBANTES ASOCIADOS*****************************************
         if (count($voucher["CbtesAsoc"]) > 0) {
             $comprobante->CbtesAsoc = array();
@@ -508,6 +519,8 @@ class Wsfev1 extends WsAFIP {
                 $cbte->Tipo = $value["Tipo"];
                 $cbte->PtoVta = $value["PtoVta"];
                 $cbte->Nro = $value["Nro"];
+                $cbte->Cuit = $value["Cuit"];
+                $cbte->CbteFch = $value["CbteFch"];
                 $comprobante->CbtesAsoc[] = $cbte;
             }
         }
